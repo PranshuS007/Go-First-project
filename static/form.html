@@ -1,18 +1,136 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Document</title>
+    <title>Go Web Server - Contact Form</title>
+    <link rel="stylesheet" href="/style.css">
 </head>
 <body>
-    <div>
-        <form method="POST" action="/form">
-            <label>Name</label><input name="name" type="text" value=""/>
-            <label>Address</label><input name="address" type="text" value=""/>
-
-            <input type="submit" value="submit">
-        </form>
+    <div class="container">
+        <header>
+            <h1>📝 Contact Form</h1>
+            <p class="subtitle">Send us your information</p>
+        </header>
+        
+        <main>
+            <div class="card">
+                <form id="contactForm" method="POST" action="/form">
+                    <div class="form-group">
+                        <label for="name">Name *</label>
+                        <input 
+                            type="text" 
+                            id="name" 
+                            name="name" 
+                            required 
+                            maxlength="100"
+                            placeholder="Enter your full name"
+                        />
+                        <span class="error-message" id="nameError"></span>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="address">Address *</label>
+                        <textarea 
+                            id="address" 
+                            name="address" 
+                            required 
+                            maxlength="200"
+                            rows="3"
+                            placeholder="Enter your address"
+                        ></textarea>
+                        <span class="error-message" id="addressError"></span>
+                    </div>
+                    
+                    <div class="form-actions">
+                        <button type="submit" class="btn btn-primary">Submit</button>
+                        <a href="/" class="btn btn-secondary">Back to Home</a>
+                    </div>
+                </form>
+                
+                <div id="responseMessage" class="response-message" style="display: none;"></div>
+            </div>
+        </main>
     </div>
+
+    <script>
+        document.getElementById('contactForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            // Clear previous errors
+            document.getElementById('nameError').textContent = '';
+            document.getElementById('addressError').textContent = '';
+            document.getElementById('responseMessage').style.display = 'none';
+            
+            // Get form data
+            const formData = new FormData(this);
+            const name = formData.get('name').trim();
+            const address = formData.get('address').trim();
+            
+            // Client-side validation
+            let hasErrors = false;
+            
+            if (!name) {
+                document.getElementById('nameError').textContent = 'Name is required';
+                hasErrors = true;
+            } else if (name.length > 100) {
+                document.getElementById('nameError').textContent = 'Name must be less than 100 characters';
+                hasErrors = true;
+            }
+            
+            if (!address) {
+                document.getElementById('addressError').textContent = 'Address is required';
+                hasErrors = true;
+            } else if (address.length > 200) {
+                document.getElementById('addressError').textContent = 'Address must be less than 200 characters';
+                hasErrors = true;
+            }
+            
+            if (hasErrors) {
+                return;
+            }
+            
+            // Submit form
+            try {
+                const response = await fetch('/form', {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                const result = await response.json();
+                const messageDiv = document.getElementById('responseMessage');
+                
+                if (response.ok && result.success) {
+                    messageDiv.className = 'response-message success';
+                    messageDiv.innerHTML = `
+                        <h3>✅ Success!</h3>
+                        <p>${result.message}</p>
+                        <p><strong>Name:</strong> ${result.data.name}</p>
+                        <p><strong>Address:</strong> ${result.data.address}</p>
+                    `;
+                    this.reset(); // Clear form
+                } else {
+                    messageDiv.className = 'response-message error';
+                    messageDiv.innerHTML = `
+                        <h3>❌ Error</h3>
+                        <p>${result.message || result.error || 'An error occurred'}</p>
+                    `;
+                }
+                
+                messageDiv.style.display = 'block';
+                messageDiv.scrollIntoView({ behavior: 'smooth' });
+                
+            } catch (error) {
+                const messageDiv = document.getElementById('responseMessage');
+                messageDiv.className = 'response-message error';
+                messageDiv.innerHTML = `
+                    <h3>❌ Network Error</h3>
+                    <p>Failed to submit form. Please try again.</p>
+                `;
+                messageDiv.style.display = 'block';
+            }
+        });
+    </script>
 </body>
 </html>
