@@ -208,6 +208,14 @@ func main() {
         mux.HandleFunc("/form", formHandler)
         mux.HandleFunc("/hello", helloHandler)
         mux.HandleFunc("/health", healthHandler)
+        
+        // Multiplication API endpoints
+        mux.HandleFunc("/multiply", multiplyHandler)
+        mux.HandleFunc("/multiply/array", multiplyArrayHandler)
+        mux.HandleFunc("/multiply/pairwise", multiplyPairwiseHandler)
+        mux.HandleFunc("/multiply/scalar", multiplyScalarHandler)
+        mux.HandleFunc("/power", powerHandler)
+        mux.HandleFunc("/factorial", factorialHandler)
 
         // Wrap with logging middleware
         handler := loggingMiddleware(mux)
@@ -329,6 +337,349 @@ func healthHandler(w http.ResponseWriter, r *http.Request) {
                 "timestamp": time.Now().Unix(),
                 "service":   "go-first-project",
                 "uptime":    time.Since(time.Now().Add(-time.Hour)).String(), // Simple uptime placeholder
+        }
+
+        json.NewEncoder(w).Encode(response)
+}
+
+
+
+// MultiplyRequest represents the request body for basic multiplication
+type MultiplyRequest struct {
+        A float64 `json:"a"`
+        B float64 `json:"b"`
+}
+
+// ArrayRequest represents the request body for array operations
+type ArrayRequest struct {
+        Numbers []float64 `json:"numbers"`
+}
+
+// PairwiseRequest represents the request body for pairwise multiplication
+type PairwiseRequest struct {
+        Array1 []float64 `json:"array1"`
+        Array2 []float64 `json:"array2"`
+}
+
+// ScalarRequest represents the request body for scalar multiplication
+type ScalarRequest struct {
+        Numbers []float64 `json:"numbers"`
+        Scalar  float64   `json:"scalar"`
+}
+
+// PowerRequest represents the request body for power operations
+type PowerRequest struct {
+        Base     float64 `json:"base"`
+        Exponent float64 `json:"exponent"`
+}
+
+// FactorialRequest represents the request body for factorial operations
+type FactorialRequest struct {
+        Number int `json:"number"`
+}
+
+// multiplyHandler handles POST requests to /multiply endpoint
+func multiplyHandler(w http.ResponseWriter, r *http.Request) {
+        // Check if path is exactly /multiply
+        if r.URL.Path != "/multiply" {
+                sendErrorResponse(w, "Not Found", "The requested resource was not found", http.StatusNotFound)
+                return
+        }
+
+        // Only allow POST method
+        if r.Method != http.MethodPost {
+                sendErrorResponse(w, "Method Not Allowed", "Only POST method is allowed for this endpoint", http.StatusMethodNotAllowed)
+                return
+        }
+
+        // Parse JSON request body
+        var req MultiplyRequest
+        if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+                sendErrorResponse(w, "Bad Request", "Invalid JSON format", http.StatusBadRequest)
+                return
+        }
+
+        // Validate input (check for reasonable bounds)
+        if req.A > 1e15 || req.A < -1e15 || req.B > 1e15 || req.B < -1e15 {
+                sendErrorResponse(w, "Validation Error", "Numbers are too large", http.StatusBadRequest)
+                return
+        }
+
+        // Perform multiplication
+        result := BasicMultiply(req.A, req.B)
+
+        // Send response
+        w.Header().Set("Content-Type", "application/json")
+        response := map[string]interface{}{
+                "success": true,
+                "data":    result,
+        }
+
+        json.NewEncoder(w).Encode(response)
+}
+
+// multiplyArrayHandler handles POST requests to /multiply/array endpoint
+func multiplyArrayHandler(w http.ResponseWriter, r *http.Request) {
+        // Check if path is exactly /multiply/array
+        if r.URL.Path != "/multiply/array" {
+                sendErrorResponse(w, "Not Found", "The requested resource was not found", http.StatusNotFound)
+                return
+        }
+
+        // Only allow POST method
+        if r.Method != http.MethodPost {
+                sendErrorResponse(w, "Method Not Allowed", "Only POST method is allowed for this endpoint", http.StatusMethodNotAllowed)
+                return
+        }
+
+        // Parse JSON request body
+        var req ArrayRequest
+        if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+                sendErrorResponse(w, "Bad Request", "Invalid JSON format", http.StatusBadRequest)
+                return
+        }
+
+        // Validate input
+        if len(req.Numbers) == 0 {
+                sendErrorResponse(w, "Validation Error", "Numbers array cannot be empty", http.StatusBadRequest)
+                return
+        }
+
+        if len(req.Numbers) > 1000 {
+                sendErrorResponse(w, "Validation Error", "Array too large (max 1000 elements)", http.StatusBadRequest)
+                return
+        }
+
+        // Validate each number
+        for _, num := range req.Numbers {
+                if num > 1e10 || num < -1e10 {
+                        sendErrorResponse(w, "Validation Error", "Numbers are too large", http.StatusBadRequest)
+                        return
+                }
+        }
+
+        // Perform array multiplication
+        result := MultiplyArray(req.Numbers)
+
+        // Send response
+        w.Header().Set("Content-Type", "application/json")
+        response := map[string]interface{}{
+                "success": true,
+                "data":    result,
+        }
+
+        json.NewEncoder(w).Encode(response)
+}
+
+// multiplyPairwiseHandler handles POST requests to /multiply/pairwise endpoint
+func multiplyPairwiseHandler(w http.ResponseWriter, r *http.Request) {
+        // Check if path is exactly /multiply/pairwise
+        if r.URL.Path != "/multiply/pairwise" {
+                sendErrorResponse(w, "Not Found", "The requested resource was not found", http.StatusNotFound)
+                return
+        }
+
+        // Only allow POST method
+        if r.Method != http.MethodPost {
+                sendErrorResponse(w, "Method Not Allowed", "Only POST method is allowed for this endpoint", http.StatusMethodNotAllowed)
+                return
+        }
+
+        // Parse JSON request body
+        var req PairwiseRequest
+        if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+                sendErrorResponse(w, "Bad Request", "Invalid JSON format", http.StatusBadRequest)
+                return
+        }
+
+        // Validate input
+        if len(req.Array1) == 0 || len(req.Array2) == 0 {
+                sendErrorResponse(w, "Validation Error", "Arrays cannot be empty", http.StatusBadRequest)
+                return
+        }
+
+        if len(req.Array1) > 1000 || len(req.Array2) > 1000 {
+                sendErrorResponse(w, "Validation Error", "Arrays too large (max 1000 elements)", http.StatusBadRequest)
+                return
+        }
+
+        // Validate each number in both arrays
+        for _, num := range req.Array1 {
+                if num > 1e10 || num < -1e10 {
+                        sendErrorResponse(w, "Validation Error", "Numbers in array1 are too large", http.StatusBadRequest)
+                        return
+                }
+        }
+        for _, num := range req.Array2 {
+                if num > 1e10 || num < -1e10 {
+                        sendErrorResponse(w, "Validation Error", "Numbers in array2 are too large", http.StatusBadRequest)
+                        return
+                }
+        }
+
+        // Perform pairwise multiplication
+        result, err := MultiplyArrayPairwise(req.Array1, req.Array2)
+        if err != nil {
+                sendErrorResponse(w, "Validation Error", err.Error(), http.StatusBadRequest)
+                return
+        }
+
+        // Send response
+        w.Header().Set("Content-Type", "application/json")
+        response := map[string]interface{}{
+                "success": true,
+                "data":    result,
+        }
+
+        json.NewEncoder(w).Encode(response)
+}
+
+// multiplyScalarHandler handles POST requests to /multiply/scalar endpoint
+func multiplyScalarHandler(w http.ResponseWriter, r *http.Request) {
+        // Check if path is exactly /multiply/scalar
+        if r.URL.Path != "/multiply/scalar" {
+                sendErrorResponse(w, "Not Found", "The requested resource was not found", http.StatusNotFound)
+                return
+        }
+
+        // Only allow POST method
+        if r.Method != http.MethodPost {
+                sendErrorResponse(w, "Method Not Allowed", "Only POST method is allowed for this endpoint", http.StatusMethodNotAllowed)
+                return
+        }
+
+        // Parse JSON request body
+        var req ScalarRequest
+        if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+                sendErrorResponse(w, "Bad Request", "Invalid JSON format", http.StatusBadRequest)
+                return
+        }
+
+        // Validate input
+        if len(req.Numbers) == 0 {
+                sendErrorResponse(w, "Validation Error", "Numbers array cannot be empty", http.StatusBadRequest)
+                return
+        }
+
+        if len(req.Numbers) > 1000 {
+                sendErrorResponse(w, "Validation Error", "Array too large (max 1000 elements)", http.StatusBadRequest)
+                return
+        }
+
+        // Validate scalar
+        if req.Scalar > 1e10 || req.Scalar < -1e10 {
+                sendErrorResponse(w, "Validation Error", "Scalar value is too large", http.StatusBadRequest)
+                return
+        }
+
+        // Validate each number
+        for _, num := range req.Numbers {
+                if num > 1e10 || num < -1e10 {
+                        sendErrorResponse(w, "Validation Error", "Numbers are too large", http.StatusBadRequest)
+                        return
+                }
+        }
+
+        // Perform scalar multiplication
+        result := MultiplyByScalar(req.Numbers, req.Scalar)
+
+        // Send response
+        w.Header().Set("Content-Type", "application/json")
+        response := map[string]interface{}{
+                "success": true,
+                "data":    result,
+        }
+
+        json.NewEncoder(w).Encode(response)
+}
+
+// powerHandler handles POST requests to /power endpoint
+func powerHandler(w http.ResponseWriter, r *http.Request) {
+        // Check if path is exactly /power
+        if r.URL.Path != "/power" {
+                sendErrorResponse(w, "Not Found", "The requested resource was not found", http.StatusNotFound)
+                return
+        }
+
+        // Only allow POST method
+        if r.Method != http.MethodPost {
+                sendErrorResponse(w, "Method Not Allowed", "Only POST method is allowed for this endpoint", http.StatusMethodNotAllowed)
+                return
+        }
+
+        // Parse JSON request body
+        var req PowerRequest
+        if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+                sendErrorResponse(w, "Bad Request", "Invalid JSON format", http.StatusBadRequest)
+                return
+        }
+
+        // Validate input (prevent extremely large calculations)
+        if req.Base > 1e6 || req.Base < -1e6 || req.Exponent > 1000 || req.Exponent < -1000 {
+                sendErrorResponse(w, "Validation Error", "Base or exponent values are too large", http.StatusBadRequest)
+                return
+        }
+
+        // Perform power calculation
+        result := Power(req.Base, req.Exponent)
+
+        // Send response
+        w.Header().Set("Content-Type", "application/json")
+        response := map[string]interface{}{
+                "success": true,
+                "data":    result,
+        }
+
+        json.NewEncoder(w).Encode(response)
+}
+
+// factorialHandler handles POST requests to /factorial endpoint
+func factorialHandler(w http.ResponseWriter, r *http.Request) {
+        // Check if path is exactly /factorial
+        if r.URL.Path != "/factorial" {
+                sendErrorResponse(w, "Not Found", "The requested resource was not found", http.StatusNotFound)
+                return
+        }
+
+        // Only allow POST method
+        if r.Method != http.MethodPost {
+                sendErrorResponse(w, "Method Not Allowed", "Only POST method is allowed for this endpoint", http.StatusMethodNotAllowed)
+                return
+        }
+
+        // Parse JSON request body
+        var req FactorialRequest
+        if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+                sendErrorResponse(w, "Bad Request", "Invalid JSON format", http.StatusBadRequest)
+                return
+        }
+
+        // Validate input
+        if req.Number < 0 {
+                sendErrorResponse(w, "Validation Error", "Factorial is not defined for negative numbers", http.StatusBadRequest)
+                return
+        }
+
+        if req.Number > 20 {
+                sendErrorResponse(w, "Validation Error", "Number too large for factorial calculation (max 20)", http.StatusBadRequest)
+                return
+        }
+
+        // Perform factorial calculation
+        result, err := Factorial(req.Number)
+        if err != nil {
+                sendErrorResponse(w, "Calculation Error", err.Error(), http.StatusBadRequest)
+                return
+        }
+
+        // Send response
+        w.Header().Set("Content-Type", "application/json")
+        response := map[string]interface{}{
+                "success": true,
+                "data": map[string]interface{}{
+                        "input":  req.Number,
+                        "result": result,
+                },
         }
 
         json.NewEncoder(w).Encode(response)
