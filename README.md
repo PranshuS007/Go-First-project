@@ -115,6 +115,141 @@ GOOS=darwin GOARCH=amd64 go build -o server-macos main.go
     -d "address=123 Main St"
   ```
 
+### GET /health
+- **Description**: Health check endpoint for monitoring
+- **Response**: JSON with service status and timestamp
+- **Example**:
+  ```bash
+  curl http://localhost:8080/health
+  # Response: {"status":"healthy","timestamp":1632150000,"service":"go-first-project","uptime":"1h0m0s"}
+  ```
+
+## 🧮 Multiplication API Endpoints
+
+### POST /multiply
+- **Description**: Basic multiplication of two numbers
+- **Content-Type**: `application/json`
+- **Request Body**:
+  ```json
+  {
+    "a": 5.0,
+    "b": 3.0
+  }
+  ```
+- **Response**:
+  ```json
+  {
+    "success": true,
+    "data": {
+      "result": 15.0,
+      "overflow": false
+    }
+  }
+  ```
+
+### POST /multiply/array
+- **Description**: Multiply all elements in an array together
+- **Content-Type**: `application/json`
+- **Request Body**:
+  ```json
+  {
+    "numbers": [2.0, 3.0, 4.0]
+  }
+  ```
+- **Response**:
+  ```json
+  {
+    "success": true,
+    "data": {
+      "results": [24.0],
+      "overflow": false
+    }
+  }
+  ```
+
+### POST /multiply/pairwise
+- **Description**: Multiply corresponding elements of two arrays
+- **Content-Type**: `application/json`
+- **Request Body**:
+  ```json
+  {
+    "array1": [2.0, 3.0, 4.0],
+    "array2": [1.0, 2.0, 3.0]
+  }
+  ```
+- **Response**:
+  ```json
+  {
+    "success": true,
+    "data": {
+      "results": [2.0, 6.0, 12.0],
+      "overflow": false
+    }
+  }
+  ```
+
+### POST /multiply/scalar
+- **Description**: Multiply each element in an array by a scalar value
+- **Content-Type**: `application/json`
+- **Request Body**:
+  ```json
+  {
+    "numbers": [1.0, 2.0, 3.0],
+    "scalar": 2.0
+  }
+  ```
+- **Response**:
+  ```json
+  {
+    "success": true,
+    "data": {
+      "results": [2.0, 4.0, 6.0],
+      "overflow": false
+    }
+  }
+  ```
+
+### POST /power
+- **Description**: Calculate base raised to the power of exponent
+- **Content-Type**: `application/json`
+- **Request Body**:
+  ```json
+  {
+    "base": 2.0,
+    "exponent": 3.0
+  }
+  ```
+- **Response**:
+  ```json
+  {
+    "success": true,
+    "data": {
+      "result": 8.0,
+      "overflow": false
+    }
+  }
+  ```
+
+### POST /factorial
+- **Description**: Calculate factorial of a non-negative integer (max 20)
+- **Content-Type**: `application/json`
+- **Request Body**:
+  ```json
+  {
+    "number": 5
+  }
+  ```
+- **Response**:
+  ```json
+  {
+    "success": true,
+    "data": {
+      "input": 5,
+      "result": 120
+    }
+  }
+  ```
+
 ### Error Responses
 
 All endpoints return consistent JSON error responses:
